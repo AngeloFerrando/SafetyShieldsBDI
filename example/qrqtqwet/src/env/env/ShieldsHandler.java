@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import cartago.*;
 import jason.asSyntax.ASSyntax;
@@ -17,35 +19,42 @@ import jason.bb.BeliefBase;
 public class ShieldsHandler extends Artifact {
 	String lamaconvPath;
 	Map<String, Monitor> shields = new HashMap<>();
-	String violatedShield;
-	List<Literal> cmds;
-	
+	Map<String, List<Literal>> violatedShield = new HashMap<>();
+	//List<Literal> cmds;
+
 	void init(String lamaconvPath) {
 		this.lamaconvPath = lamaconvPath;
 	}
 
 	@OPERATION
-	void add_shield(String id, String property) throws IOException {
+	void add_shield(Integer intention, String id, String property) throws IOException {
 		property = property.replace("_", "");
 		property = property.replaceAll("(\\S+)\\((\\S+)\\)", "$1$2");
 		property = property.strip();
-		shields.putIfAbsent(id, new Monitor(lamaconvPath, property, null));
-		System.out.println("Shield " + id + " has been added.");
+		shields.putIfAbsent(intention+id, new Monitor(lamaconvPath, property, null));
+		System.out.println("Intention" + intention + "Shield " + id + " has been added.");
 	}
-	
+
 	@OPERATION
-	void remove_shield(String id, String property) {
-		shields.remove(id);
-		System.out.println("Shield " + id + " has been removed.");
+	void remove_shield(Integer intention, String id) {
+		shields.remove(intention+id.substring(0, id.indexOf("_")));
+		System.out.println("Intention" + intention + "Shield " + id + " has been removed.");
 	}
-	
+
 	@OPERATION
-	void update_shield(String shieldIds, String event) {
+	void update_shield(Integer intention, Object[] shieldIds, String event) {
 		event = event.replace("(", "").replace(")", "").replace("_", "");
 		System.out.println("------------");
-		for(String key : shieldIds.replace("{", "").replace("}", "").replace("'", "").strip().split(",")) {
-			System.out.println(key);
-			key = key.strip();
+		Set<String> shieldIdsStr = new HashSet<>();
+		for(Object k : shieldIds) {
+			String key = (String) k;
+			shieldIdsStr.add(key.substring(0, key.indexOf("_")).strip());
+		}
+		for(String key : shieldIdsStr) { //}.replace("{", "").replace("}", "").replace("'", "").strip().split(",")) {
+			//System.out.println("Intention" + intention + key);
+			//key = key.substring(0, key.indexOf("_"));
+			//key = key.strip();
+			key = intention + key;
 			Monitor.Verdict result = shields.get(key).next(event);
 			if(result == Monitor.Verdict.False) {
 				String property = shields.get(key).getLtl();
@@ -63,32 +72,33 @@ public class ShieldsHandler extends Artifact {
 					cmd = cmd.replaceAll("action(\\w+)", "action\\($1\\)");
 					cmds.add(ASSyntax.createLiteral(cmd));
 				}
-				this.violatedShield = key;
-				this.cmds = cmds;
+				this.violatedShield.put(key, cmds);
+				//this.cmds = cmds;
 				// fail
 				failed("Shield has been violated");
 			}
 		}
 	}
-	
+
 	@OPERATION
-	void violated(String shieldId, OpFeedbackParam<Literal[]> cmds) {
-		if(this.violatedShield != null && this.cmds != null) {
-			if(!this.violatedShield.equals(shieldId)) {
-				failed("Not this recovery plan");
-			}
-			cmds.set(this.cmds.toArray(new Literal[this.cmds.size()]));
+	void violated(Integer intention, String shieldId, OpFeedbackParam<Literal[]> cmds) {
+		if(this.violatedShield.containsKey(intention + shieldId)) {//this.violatedShield != null && this.cmds != null) {
+			//if(!this.violatedShield.equals(shieldId)) {
+			//}
+			cmds.set(this.violatedShield.get(intention + shieldId).toArray(new Literal[this.violatedShield.get(intention + shieldId).size()]));
+			this.violatedShield.remove(intention + shieldId);
 		} else {
-			failed("");
+			failed("Not this recovery plan");
+			//failed("");
 		}
 	}
-	
+
 	@OPERATION
 	void reset_violated() {
-		this.violatedShield = null;
-		this.cmds = null;
+		this.violatedShield.clear();
+		// this.cmds = null;
 	}
-	
+
 	@OPERATION
 	void action1() {
 		try {
@@ -161,7 +171,7 @@ public class ShieldsHandler extends Artifact {
 			e.printStackTrace();
 		}
 	}
-	
+
 //	@OPERATION
 //	void violated(OpFeedbackParam<String> shieldId, OpFeedbackParam<String[]> cmds) {
 //		if(this.violatedShield != null && this.cmds != null) {
@@ -171,4 +181,3 @@ public class ShieldsHandler extends Artifact {
 //		}
 //	}
 }
-

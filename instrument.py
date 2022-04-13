@@ -39,56 +39,71 @@ def instrument(filename, content, shielded_plans, shielded_by_definition):
                 f.write(line + '\n')
         elif not skip:
             f.write(line + '\n')
-    f.write('@add_id[atomic]\n')
-    f.write('+!add_id(Id) : ids(IDs) <- -ids(IDs); +ids([Id|IDs]).\n\n')
-    f.write('@remove_ids[atomic]\n')
-    f.write('+!remove_ids(ShieldId) : ids(IDs) <- !remove_ids(ShieldId, IDs, IDs1); -ids(_); +ids(IDs1).\n')
-    f.write('+!remove_ids(ShieldId, [], []) : true <- true.\n')
-    f.write('+!remove_ids(ShieldId, [ID|IDs], IDs1) : .substring(ShieldId, ID) <- !remove_ids(ShieldId, IDs, IDs1).\n')
-    f.write('+!remove_ids(ShieldId, [ID|IDs], [ID|IDs1]) : true <- !remove_ids(ShieldId, IDs, IDs1).\n')
+    f.write('@push_id[atomic]\n')
+    f.write('+!push_id(Intention, Id) : ids(Intention, IDs) <- -ids(Intention, IDs); +ids(Intention, [Id|IDs]).\n')
+    f.write('+!push_id(Intention, Id) : true <- +ids(Intention, [Id]).\n\n')
+    f.write('@pop_id[atomic]\n')
+    f.write('+!pop_id(Intention, Id) : ids(Intention, [Id|IDs]) <- -ids(Intention, _); +ids(Intention, IDs).\n\n')
+    f.write('@pop_count[atomic]')
+    f.write('+!pop_count(Intention, 1, Id) : true <- !pop_id(Intention, Id).\n')
+    f.write('+!pop_count(Intention, N, Id) : true <- !pop_id(Intention, _); !pop_count(Intention, N-1, Id).\n\n')
+    # f.write('+!remove_ids(ShieldId) : ids(IDs) <- !remove_ids(ShieldId, IDs, IDs1); -ids(_); +ids(IDs1).\n')
+    # f.write('+!remove_ids(ShieldId, [], []) : true <- true.\n')
+    # f.write('+!remove_ids(ShieldId, [ID|IDs], IDs1) : .substring(ShieldId, ID) <- !remove_ids(ShieldId, IDs, IDs1).\n')
+    # f.write('+!remove_ids(ShieldId, [ID|IDs], [ID|IDs1]) : true <- !remove_ids(ShieldId, IDs, IDs1).\n')
     f.write('+!toTerms([], []).\n')
     f.write('+!toTerms([S|Ss], [T|Ts]) <- .term2string(T, S); !toTerms(Ss, Ts).\n\n')
     f.write('+!restore([]) : true <- true.\n')
     f.write('+!restore([add_belief(B)|Cmds]) : true <- -B; !restore(Cmds).\n')
     f.write('+!restore([remove_belief(B)|Cmds]) : true <- +B; !restore(Cmds).\n')
     f.write('+!restore([action(A)|Cmds]) : opposite(A, OpA) <- OpA; !restore(Cmds).\n')
-    f.write('+!restore([_|Cmds]) : true <- !restore(Cmds).\n')
+    f.write('+!restore([_|Cmds]) : true <- !restore(Cmds).\n\n')
+    f.write('+!get_count(Intention, Count, Default) : count(Intention, Count).\n')
+    f.write('+!get_count(Intention, Default, Default).\n\n')
     f.close()
 def instrument_plan(plan, initially_defined, id):
     if initially_defined:
-        instrumented_plan = plan['name'] + ' : ' + plan['ctxt'] + ' & ids(IDs) & not(.member("' + plan['id'] + '_' + id + '", IDs))' + ' <- !add_id("' + plan['id'] + '_' + id + '"); '
+        instrumented_plan = plan['name'] + ' : ' + plan['ctxt'] + ' & .intention(I, _, Stack, current) & (ids(I, IDs) | IDs=[]) & .length(Stack, Depth) & .concat("'+plan['id']+'_'+id+'_", Depth, IntIDD) & not(.member(IntIDD, IDs))' + ' <- !push_id(I, IntDD); ids(I, CurrentlyActShields); '
     else:
-        instrumented_plan = plan['name'] + ' : ' + plan['ctxt'] + ' <- '
+        instrumented_plan = plan['name'] + ' : ' + plan['ctxt'] + ' & .intention(I, _, Stack, current) <- ids(I, CurrentlyActShields); '
     if 'property' in plan:
-        instrumented_plan = instrumented_plan + 'add_shield("' + str(plan['id']) + '", "' + plan['property'] + '"); '
+        instrumented_plan = instrumented_plan + 'add_shield(I, "'+plan['id']+'", "' + plan['property'] + '"); '
     first = True
     for cmd in plan['body']:
-        if first: first = False
-        else: instrumented_plan = instrumented_plan + '; '
-        shieldIds = set()
-        if 'id' in plan and plan['id']:
-            shieldIds.add(plan['id'])
-        if 'father_id' in plan and plan['father_id']:
-            shieldIds = shieldIds.union(plan['father_id'])
+        if first:
+            first = False
+            #instrumented_plan = instrumented_plan + '?ids(IDsAux); '
+        else:
+            instrumented_plan = instrumented_plan + '; '
+        # shieldIds = set()
+        # if 'id' in plan and plan['id']:
+        #     shieldIds.add(plan['id'])
+        # if 'father_id' in plan and plan['father_id']:
+        #     shieldIds = shieldIds.union(plan['father_id'])
         if cmd.startswith('+'):
-            instrumented_plan = instrumented_plan + 'update_shield("' + str(shieldIds) + '", "add_belief(' + cmd[1:] + ')"); ' + cmd
+            instrumented_plan = instrumented_plan + 'update_shield(I, CurrentlyActShields, "add_belief(' + cmd[1:] + ')"); ' + cmd
         elif cmd.startswith('-'):
-            instrumented_plan = instrumented_plan + 'update_shield("' + str(shieldIds) + '", "remove_belief(' + cmd[1:] + ')"); ' + cmd
+            instrumented_plan = instrumented_plan + 'update_shield(I, CurrentlyActShields, "remove_belief(' + cmd[1:] + ')"); ' + cmd
         elif cmd.startswith('?'):
-            instrumented_plan = instrumented_plan + 'update_shield("' + str(shieldIds) + '", "test_goal(' + cmd[1:] + ')"); ' + cmd
+            instrumented_plan = instrumented_plan + 'update_shield(I, CurrentlyActShields, "test_goal(' + cmd[1:] + ')"); ' + cmd
         elif cmd.startswith('!'):
-            instrumented_plan = instrumented_plan + 'update_shield("' +str(shieldIds) + '", "goal(' + cmd[1:] + ')"); ' + cmd
+            instrumented_plan = instrumented_plan + 'update_shield(I, CurrentlyActShields, "goal(' + cmd[1:] + ')"); ' + cmd
         elif cmd != 'true':
-            instrumented_plan = instrumented_plan + 'update_shield("' + str(shieldIds) + '", "action(' + cmd + ')"); ' + cmd
+            instrumented_plan = instrumented_plan + 'update_shield(I, CurrentlyActShields, "action(' + cmd + ')"); ' + cmd
     if 'property' in plan:
         if not instrumented_plan.endswith('; '): instrumented_plan = instrumented_plan + '; '
-        instrumented_plan = instrumented_plan + 'remove_shield("' + str(plan['id']) + '", "' + plan['property'] + '")'
-        instrumented_plan = instrumented_plan + '; !remove_ids("' + str(plan['id']) + '_' + id + '")'
+        instrumented_plan = instrumented_plan + '!get_count(I, "'+plan['id']+'", Count, 1); !pop_count(I, Count, ThisShieldId); remove_shield(I, ThisShieldId)' #'remove_shield(I, "'+plan['id']+'", "' + plan['property'] + '")'
     instrumented_plan = instrumented_plan + '.'
     return instrumented_plan
 def recovery_plan(plan, property):
-    instrumented_plan = '-' + plan['name'][1:] + ' : true <- violated("' + plan['id'] + '", Cmds); !toTerms(Cmds, TCmds); !restore(TCmds); !' + plan['name'][2:] + '.'
+    instrumented_plan = '-' + plan['name'][1:] + ' : .intention(I, _, Stack, current) & violated(I, "'+plan['id']+'", Cmds) & (count(I, "'+plan['id']+'", Count) | Count = 1) <- -count(I, Count); +count(I, Count+1); !toTerms(Cmds, TCmds); !restore(TCmds); !' + plan['name'][2:] + '.\n'
+    instrumented_plan = instrumented_plan + '-' + plan['name'][1:] + ' : .intention(I, _, Stack, current) <- !pop_count(I, "'+plan['id']+'", Count, ThisShieldId); remove_shield(I, ThisShieldId).\n\n'
     return instrumented_plan
+
+# Update the way we keep track of the shields:
+# add a stack of shields for intention (shields_stack(I, [S1,S2,S3]))
+# update_shield gets the Ss in the stack and calls the artifact update shield operation
+# remove_shield only gets the last S on the stack, remove it, and call the artifact remove shield operation (this is both called at the end of the shielded plan, and in the recovery plan)
 
 
 f = open('experiment_single.asl', 'r')
