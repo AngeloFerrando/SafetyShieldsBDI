@@ -97,7 +97,7 @@ def instrument_plan(plan, initially_defined, id):
     return instrumented_plan
 def recovery_plan(plan, property):
     instrumented_plan = '-' + plan['name'][1:] + ' : .intention(I, _, Stack, current) & violated(I, "'+plan['id']+'", Cmds) & (count(I, "'+plan['id']+'", Count) | Count = 1) <- -count(I, Count); +count(I, Count+1); !toTerms(Cmds, TCmds); !restore(TCmds); !' + plan['name'][2:] + '.\n'
-    instrumented_plan = instrumented_plan + '-' + plan['name'][1:] + ' : .intention(I, _, Stack, current) <- !pop_count(I, "'+plan['id']+'", Count, ThisShieldId); remove_shield(I, ThisShieldId).\n\n'
+    instrumented_plan = instrumented_plan + '-' + plan['name'][1:] + ' : .intention(I, _, Stack, current) <- !pop_count(I, "'+plan['id']+'", Count, ThisShieldId); remove_shield(I, ThisShieldId); .fail.\n\n'
     return instrumented_plan
 
 # Update the way we keep track of the shields:
