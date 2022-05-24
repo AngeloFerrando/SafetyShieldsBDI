@@ -17,7 +17,9 @@ def instrument(filename, content, shielded_plans, shielded_by_definition):
     f = open(filename, 'w')
     skip = False
     id = 0
-    f.write('ids([]).\n')
+    for i in range(50):
+        f.write('ids({i}, []). depth({i} ,0).'.format(i=i))
+    f.write('\n')
     events = set()
     for line in content.split('\n'):
         if line.startswith('@shield'): continue
