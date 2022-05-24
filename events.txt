@@ -1,0 +1,1 @@
+[remove_belief(count(_)),add_belief(belief4),action(action4),add_belief(count(C+1)),goal(plan1)]

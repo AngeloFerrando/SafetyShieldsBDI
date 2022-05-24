@@ -7,7 +7,8 @@ count(0).
 
 @shield1("G(add_belief(belief4) -> X(action(action3)))")
 +!plan1 : count(100) <- true.
-+!plan1 : count(C) <- -count(_); +count(C+1); +belief5; !plan2; action3; !plan1.
++!plan1 : count(C) <- -count(_); +count(C+1); +belief4; action4; !plan1.
++!plan1 : true <- .print("terminated").
 
 @shield2("G(add_belief(belief4) -> X(action(action3)))")
 +!plan2 : true <- action4.
