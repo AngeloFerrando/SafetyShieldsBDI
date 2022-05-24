@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="k3.k3.main" target="15" />
+      <module name="k3.k3.test" target="15" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
