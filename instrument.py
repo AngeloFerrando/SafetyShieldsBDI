@@ -75,9 +75,11 @@ def instrument(filename, content, shielded_plans, shielded_by_definition, events
     f.close()
 def instrument_plan(plan, initially_defined, id):
     if initially_defined:
-        instrumented_plan = plan['name'] + ' : ' + plan['ctxt'] + ' & .intention(I1, _, Stack, current) & (head_intention(I1, I) | (not(head_intention(I1, _)) & I=I1)) & (ids(I, IDs) | (not(ids(I, _)) & IDs=[])) & (depth(I, Depth)|(not(depth(I, _)) & Depth=0)) & .concat("'+plan['id']+'_'+id+'_", Depth, IntIDD) & not(.member(IntIDD, IDs))' + ' <- -depth(I, _); +depth(I, Depth+1); !push_id(I, "'+plan['id']+'", IntIDD); ?ids(I, CurrentlyActShields); '
+        instrumented_plan = plan['name'] + ' : ' + 'true <- !' + plan['name'][2:] + '1. \n'
+        instrumented_plan = instrumented_plan + plan['name'] + '1 : ' + plan['ctxt'] + ' & .intend(' + plan['name'][2:] + ', I) & (ids(I, IDs) | (not(ids(I, _)) & IDs=[])) & (depth(I, Depth)|(not(depth(I, _)) & Depth=0)) & .concat("'+plan['id']+'_'+id+'_", Depth, IntIDD) & not(.member(IntIDD, IDs))' + ' <- -depth(I, _); +depth(I, Depth+1); !push_id(I, "'+plan['id']+'", IntIDD); ?ids(I, CurrentlyActShields); '
     else:
-        instrumented_plan = plan['name'] + ' : ' + plan['ctxt'] + ' & .intention(I1, _, Stack, current) & (head_intention(I1, I) | (not(head_intention(I1, _)) & I=I1)) <- ?ids(I, CurrentlyActShields); '
+        instrumented_plan = plan['name'] + ' : ' + 'true <- !' + plan['name'] + '1'
+        instrumented_plan = instrumented_plan + plan['name'] + '1 : ' + plan['ctxt'] + ' & .intend(' + plan['name'][2:] + ', I) <- ?ids(I, CurrentlyActShields); '
     if 'property' in plan:
         instrumented_plan = instrumented_plan + '?events(Events); add_shield(I, "'+plan['id']+'", "' + plan['property'] + '", Events); '
     first = True
@@ -130,8 +132,8 @@ def instrument_plan(plan, initially_defined, id):
     instrumented_plan = instrumented_plan + '.'
     return instrumented_plan
 def recovery_plan(plan, property):
-    instrumented_plan = '-' + plan['name'][1:] + ' : .intention(I1, _, Stack, current) & violated(I, "'+plan['id']+'", Cmds) & (count(I, "'+plan['id']+'", Count) | (not(count(I, "'+plan['id']+'", Count)) & Count = 1)) <- I2 = I1-1; -head_intention(I2, _); +head_intention(I2, I); !toTerms(Cmds, TCmds); !restore(TCmds); -depth(I, D); +depth(I, D-1); !' + plan['name'][2:] + '.\n'
-    instrumented_plan = instrumented_plan + '-' + plan['name'][1:] + ' : .intention(I, _, Stack, current) & (count(I, "'+plan['id']+'", Count) | Count = 1) <- !pop_count(I, Count, ThisShieldId); remove_shield(I, "'+plan['id']+'"); -depth(I, D); +depth(I, D-1); .fail.\n\n'
+    instrumented_plan = '-' + plan['name'][1:] + ' : .intend(' + plan['name'][2:] + ', I) & violated(I, "'+plan['id']+'", Cmds) & (count(I, "'+plan['id']+'", Count) | (not(count(I, "'+plan['id']+'", Count)) & Count = 1)) <- I2 = I1-1; -head_intention(I2, _); +head_intention(I2, I); !toTerms(Cmds, TCmds); !restore(TCmds); -depth(I, D); +depth(I, D-1); !' + plan['name'][2:] + '.\n'
+    instrumented_plan = instrumented_plan + '-' + plan['name'][1:] + ' : .intend(' + plan['name'][2:] + ', I) & (count(I, "'+plan['id']+'", Count) | Count = 1) <- !pop_count(I, Count, ThisShieldId); remove_shield(I, "'+plan['id']+'"); -depth(I, D); +depth(I, D-1); .fail.\n\n'
     return instrumented_plan
 
 # Update the way we keep track of the shields:
