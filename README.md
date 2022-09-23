@@ -3,7 +3,7 @@
 ##Instrumentation
 
 The instrument.py file contains the code for instrumenting a BDI agent implemented in Jason. To test, just run it in the terminal.
-To set the name of the .asl file to instrument, change line 109.
+To set the name of the .asl file to instrument, change line 125.
 
 ##JaCaMo
 

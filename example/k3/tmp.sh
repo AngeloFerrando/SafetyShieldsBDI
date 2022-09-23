@@ -1,0 +1,1 @@
+java -jar /media/angelo/WorkData/lamaconv-snapshot-2016-09-07//rltlconv.jar LTL=Gaddbeliefpercradlow,ALPHABET=[addbeliefpercradlow, addbeliefpercradhigh] --formula --nbas --min --nfas --dfas --min --moore

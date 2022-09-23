@@ -1,1 +1,1 @@
-[goal(plan1),add_belief(count(C+1)),add_belief(belief4),remove_belief(count(_)),action(action4)]
+[goal(inspect(wp1)),add_belief(perc_rad(R2)),action(move_to(wp4, R4)),add_belief(perc_rad(R4)),action(move_to(wp2, R2)),remove_belief(perc_rad(R4)),remove_belief(perc_rad(R2))]
