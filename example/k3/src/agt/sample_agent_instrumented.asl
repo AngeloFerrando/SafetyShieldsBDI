@@ -60,10 +60,8 @@ fast.
 
 /* Plans */
 
-+violated(I, Id, [Cmd|Cmds]) : true <- .print(I, " ", Id, " ", Cmds).
-
-+!inspect_nuclear_plant : fast & .intention(I1, _, Stack, current) & (head_intention(I1, I) | (not(head_intention(I1, _)) & I=I1)) & .print("ID: ", I) & (ids(I, IDs) | (not(ids(I, _)) & IDs=[])) & (depth(I, Depth)|(not(depth(I, _)) & Depth=0)) & .concat("shield1_id0_", Depth, IntIDD) & .print("here2") & not(.member(IntIDD, IDs)) <- .print("here3"); -depth(I, _); +depth(I, Depth+1); !push_id(I, "shield1", IntIDD); ?ids(I, CurrentlyActShields); ?events(Events); add_shield(I, "shield1", "G(add_belief(perc_rad(low)))", Events); .term2string(goal(inspect(wp1)), Term0); update_shield(I, CurrentlyActShields, Term0); !inspect(wp1); 
-	.print("here1");
++!inspect_nuclear_plant : true <- !inspect_nuclear_plant1. 
++!inspect_nuclear_plant1 : fast & .intend(inspect_nuclear_plant, I) & (ids(I, IDs) | (not(ids(I, _)) & IDs=[])) & (depth(I, Depth)|(not(depth(I, _)) & Depth=0)) & .concat("shield1_id0_", Depth, IntIDD) & not(.member(IntIDD, IDs)) <- -depth(I, _); +depth(I, Depth+1); !push_id(I, "shield1", IntIDD); ?ids(I, CurrentlyActShields); ?events(Events); add_shield(I, "shield1", "G(add_belief(perc_rad(low)))", Events); .term2string(goal(inspect(wp1)), Term0); update_shield(I, CurrentlyActShields, Term0); !inspect(wp1); 
 	.term2string(action(move_to(wp2, R2)), Term1); update_shield(I, CurrentlyActShields, Term1); move_to(wp2, R2); 
 	.term2string(remove_belief(perc_rad(R2)), Term2); update_shield(I, CurrentlyActShields, Term2); -perc_rad(R2); 
 	.term2string(add_belief(perc_rad(R2)), Term3); update_shield(I, CurrentlyActShields, Term3); +perc_rad(R2); 
@@ -73,17 +71,8 @@ fast.
 	.term2string(add_belief(perc_rad(R3)), Term7); update_shield(I, CurrentlyActShields, Term7); +perc_rad(R3); 
 	.term2string(action(.print("Detected level of radiation: ", R3)), Term8); update_shield(I, CurrentlyActShields, Term8); .print("Detected level of radiation: ", R3); 
 	.term2string(goal(inspect(wp3)), Term9); update_shield(I, CurrentlyActShields, Term9); !inspect(wp3); !get_count(I, "shield1", Count, 1); !pop_count(I, Count, ThisShieldId); remove_shield(I, "shield1").
-+!inspect_nuclear_plant : true & .print("second case") & .intention(I1, _, Stack, current) & (head_intention(I1, I) | (not(head_intention(I1, _)) & I=I1)) & (ids(I, IDs) | (not(ids(I, _)) & IDs=[])) & (depth(I, Depth)| (not(depth(I, _)) & Depth=0)) & .concat("shield1_id1_", Depth, IntIDD) & not(.member(IntIDD, IDs)) & .print("here4") <- 
-	-depth(I, _); +depth(I, Depth+1); 
-	!push_id(I, "shield1", IntIDD); 
-	?ids(I, CurrentlyActShields); 
-	?events(Events); 
-	add_shield(I, "shield1", "G(add_belief(perc_rad(low)))", Events); 
-	.term2string(goal(inspect(wp1)), Term0); 
-	.print("here6: ", update_shield(I, CurrentlyActShields, Term0));
-	update_shield(I, CurrentlyActShields, Term0); 
-	!inspect(wp1); 
-	.print("here5");
++!inspect_nuclear_plant : true <- !inspect_nuclear_plant1. 
++!inspect_nuclear_plant1 : true & .intend(inspect_nuclear_plant, I) & (ids(I, IDs) | (not(ids(I, _)) & IDs=[])) & (depth(I, Depth)|(not(depth(I, _)) & Depth=0)) & .concat("shield1_id1_", Depth, IntIDD) & not(.member(IntIDD, IDs)) <- -depth(I, _); +depth(I, Depth+1); !push_id(I, "shield1", IntIDD); ?ids(I, CurrentlyActShields); ?events(Events); add_shield(I, "shield1", "G(add_belief(perc_rad(low)))", Events); .term2string(goal(inspect(wp1)), Term0); update_shield(I, CurrentlyActShields, Term0); !inspect(wp1); 
 	.term2string(action(move_to(wp4, R4)), Term1); update_shield(I, CurrentlyActShields, Term1); move_to(wp4, R4); 
 	.term2string(remove_belief(perc_rad(R4)), Term2); update_shield(I, CurrentlyActShields, Term2); -perc_rad(R4); 
 	.term2string(add_belief(perc_rad(R4)), Term3); update_shield(I, CurrentlyActShields, Term3); +perc_rad(R4); 
@@ -92,34 +81,9 @@ fast.
 	.term2string(remove_belief(perc_rad(R5)), Term6); update_shield(I, CurrentlyActShields, Term6); -perc_rad(R5); 
 	.term2string(add_belief(perc_rad(R5)), Term7); update_shield(I, CurrentlyActShields, Term7); +perc_rad(R5); 
 	.term2string(action(.print("Detected level of radiation: ", R5)), Term8); update_shield(I, CurrentlyActShields, Term8); .print("Detected level of radiation: ", R5); 
-	.term2string(goal(inspect(wp5)), Term9); update_shield(I, CurrentlyActShields, Term9); !inspect(wp5);
-	
-	.findall(CCC, (count(II, SS, CC) & CCC=count(II, SS, CC)), L);
-	.print(L);
-	
-	!get_count(I, "shield1", Count, 1); 
-	.print("PEPPIA1: ", get_count(I, "shield1", Count, 1));
-	.print(pop_count(I, Count, ThisShieldId));
-	!pop_count(I, Count, ThisShieldId); 
-	.print("PEPPIA1");
-	remove_shield(I, "shield1").
--!inspect_nuclear_plant : 
-	.intention(I1, _, Stack, current) &
-	//.print("BAAAAAAAAAA0 ", I) &
-	violated(I, "shield1", Cmds) & 
-	.print("BAAAAAAAAAAA: ", I) &
-	(count(I, "shield1", Count) | Count = 1) 
-<- 
-	I2 = I1-1;
-	-head_intention(I2, _);
-	+head_intention(I2, I);
-	.print(head_intention(I2, I));
-	!toTerms(Cmds, TCmds); 
-	!restore(TCmds); 
-	-depth(I, D); 
-	+depth(I, D-1); 
-	!inspect_nuclear_plant.
-//-!inspect_nuclear_plant : .intention(I, _, Stack, current) & (count(I, "shield1", Count) | Count = 1) <- !pop_count(I, Count, ThisShieldId); remove_shield(I, "shield1"); -depth(I, D); +depth(I, D-1); .fail.
+	.term2string(goal(inspect(wp3)), Term9); update_shield(I, CurrentlyActShields, Term9); !inspect(wp3); !get_count(I, "shield1", Count, 1); !pop_count(I, Count, ThisShieldId); remove_shield(I, "shield1").
+-!inspect_nuclear_plant : .intend(inspect_nuclear_plant, I) & violated(I, "shield1", Cmds) & (count(I, "shield1", Count) | (not(count(I, "shield1", Count)) & Count = 1)) <- I2 = I1-1; -head_intention(I2, _); +head_intention(I2, I); !toTerms(Cmds, TCmds); !restore(TCmds); -depth(I, D); +depth(I, D-1); !inspect_nuclear_plant.
+-!inspect_nuclear_plant : .intend(inspect_nuclear_plant, I) & (count(I, "shield1", Count) | Count = 1) <- !pop_count(I, Count, ThisShieldId); remove_shield(I, "shield1"); -depth(I, D); +depth(I, D-1); .fail.
 
 
 
@@ -135,7 +99,7 @@ fast.
 //{ include("$moiseJar/asl/org-obedient.asl") }
 
 @push_id[atomic]
-+!push_id(Intention, ShieldId, Id) : ids(Intention, IDs) & (count(Intention, ShieldId, C) | (not(count(Intention, ShieldId, C)) & C=0)) <- -ids(Intention, IDs); +ids(Intention, [Id|IDs]); -count(Intention, ShieldId, C); C1=C+1; +count(Intention, ShieldId, C1).
++!push_id(Intention, ShieldId, Id) : ids(Intention, IDs) & (count(Intention, ShieldId, C) | (not(count(Intention, ShieldId, C)) & C=0)) <- -ids(Intention, IDs); +ids(Intention, [Id|IDs]); -count(Intention, ShieldId, C); +count(Intention, ShieldId, C+1).
 +!push_id(Intention, ShieldId, Id) : (count(Intention, ShieldId, C) | (not(count(Intention, ShieldId, C)) & C=0)) <- +ids(Intention, [Id]); -count(Intention, ShieldId, _); +count(Intention, ShieldId, 1).
 
 @pop_id[atomic]
