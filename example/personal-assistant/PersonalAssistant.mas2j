@@ -1,0 +1,5 @@
+MAS blocksWorldCS551k {
+    agents: assistant;
+			human;
+			dentist;
+}
